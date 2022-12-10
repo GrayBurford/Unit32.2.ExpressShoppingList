@@ -8,8 +8,9 @@ const items = require("./fakeDb.js");
 // [{“name”: “popsicle”, “price”: 1.45}, {“name”:”cheerios”, “price”: 3.40}]
 router.get("/", (request, response) => {
     console.log("You called router.get(/)");
-    response.json({items});
+    response.status(200).json({items});
 })
+
 
 // Sample response:
 // {“name”:”popsicle”, “price”: 1.45} => {“added”: {“name”: “popsicle”, “price”: 1.45}}
@@ -31,6 +32,7 @@ router.post("/", (request, response, next) => {
     }
 })
 
+
 // Sample response:
 // {“name”: “popsicle”, “price”: 1.45}
 router.get("/:name", (request, response, next) => {
@@ -39,23 +41,64 @@ router.get("/:name", (request, response, next) => {
         if (!request.params.name) throw new ExpressError("Missing item name!", 400);
         const item = items.find(item => item.name == request.params.name);
         console.log("ITEM FOUND:", item);
-        response.json({item});
+        response.status(200).json({"ITEM FOUND" : item});
     } catch (error) {
-        next(error)
+        next(error);
     }
 
 })
 
+
 // Sample response:
 // {“name”:”new popsicle”, “price”: 2.45} => {“updated”: {“name”: “new popsicle”, “price”: 2.45}}
-router.patch("/:name", (request, response) => {
+router.patch("/:name", (request, response, next) => {
     console.log("You called router.PATCH(/:name)");
+    try {
+        if (!request.params.name) throw new ExpressError("Missing item name!", 400);
+
+        let item = items.find(item => item.name == request.params.name);
+
+        if (item === undefined) throw new ExpressError("Missing item name!", 400);
+
+        console.log("ITEM:", item)
+
+        item.name = request.body.name;
+        console.log("BODY:", request.body.name)
+
+        item.price = request.body.price;
+        console.log("PRICE:", request.body.price)
+
+
+        console.log("Item updated:", item);
+        response.status(200).json({"updated" : item})
+    } catch (error) {
+        next(error);
+    }
 })
+
 
 // Sample response:
 // {message: “Deleted”}
-router.delete("/:name", (request, response) => {
+router.delete("/:name", (request, response, next) => {
     console.log("You called router.DELETE(/:name)");
+    try {
+        if (!request.params.name) throw new ExpressError("Missing item name!", 400);
+
+        // must find INDEX, not item
+        let item = items.findIndex(item => item.name == request.params.name);
+
+        if (item === -1) throw new ExpressError("Cannot find that name", 404);
+        // if (item === undefined) throw new ExpressError("Cannot find that name", 404);
+
+        // splicing with index numbers, not values
+        items.splice(item, 1)
+        console.log(items);
+        response.status(202).json({message : "Deleted!"});
+    } catch (error) {
+        next(error);
+    }
 })
+
+
 
 module.exports = router;
